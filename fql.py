@@ -17,6 +17,9 @@ os.chdir(Path(__file__).parent)
 if 'dev' in os.environ.keys():
     sys.path.append(os.environ['dev'] + '\\Python\\')
     import debugmode as dbg
+else:
+    from types import SimpleNamespace
+    dbg = SimpleNamespace(debug=print)
 
 
 
