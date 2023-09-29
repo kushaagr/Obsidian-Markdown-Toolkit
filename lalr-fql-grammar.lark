@@ -1,0 +1,66 @@
+%import common.WS
+%ignore WS
+%import common.LETTER
+%import common.CNAME
+%import common.ESCAPED_STRING
+%import common.NUMBER           -> CNUM
+
+?start: cd_stmt | quit_stmt | select_stmt | insert_stmt
+
+cd_stmt: "CHANGE"i (path | quoted_path) ";"?
+quit_stmt: "QUIT"i ";"?
+select_stmt: "SELECT"i properties "FROM"i quoted_resource_path [ "RECURSE"i ]  [ where_clause ] [ sort_clause ] ";"?
+insert_stmt: "INSERT"i key_value_object "INTO"i files [ IF_EXISTS_FLAG ] [ where_clause ] ";"?
+
+properties: ASTERISK 
+          | PROPERTY ("," PROPERTY)+
+sort_clause: "SORT BY"i PROPERTY [ ORDER ] ";"?
+where_clause: "WHERE"i PROPERTY OPERATOR simple_value
+
+quoted_resource_path: quoted_path
+quoted_path: "'" path "'" | "\"" path "\""
+resource_path: path [ WILDCARD_TEXT ] 
+path: absolute_path | relative_path | path_with_environment_variable
+absolute_path: windows_path | linux_path
+// relative_path: ("."|"..") ["\\" | "/"] (DIRECTORY ("\\" | "/"))*
+relative_path: ("."|"..") (("\\" | "/") DIRECTORY)* ["\\" | "/"]
+path_with_environment_variable: "$" CNAME ("\\" | "/") (DIRECTORY ("\\" | "/"))*
+windows_path: LETTER "\:\\" (DIRECTORY "\\") *
+linux_path: "/" (DIRECTORY "/")*
+
+files: path WILDCARD_TEXT
+
+// key_value_object: "{" [pair] ("," pair)* "}"
+key_value_object: "{" (pair ",")* [pair] "}"
+
+pair: PROPERTY ":" value 
+
+value: STRING
+     | NUMBER
+     | array
+     | BOOLEAN
+     | DATETIME
+     | NULL
+     | template_variable
+
+array: "[" [ simple_value ("," simple_value)* ] "]"
+simple_value: NUMBER | STRING | BOOLEAN | DATETIME | NULL
+template_variable: "{{" VARIABLE_STRING "}}"
+
+ORDER: "ASC" | "DESC"
+IF_EXISTS_FLAG: "IF EXISTS"i
+
+DATETIME.5: DATETIME_PATTERN
+DATETIME_PATTERN: /\d{1,4}-\d{1,4}-\d{1,4}(\s*[\sTt]?\s*\d\d\:\d\d(\:\d\d)?)?/
+NUMBER.3: CNUM
+BOOLEAN.2: "true"i | "false"i
+STRING: ESCAPED_STRING
+NULL.2: "null"
+
+ASTERISK: "*"
+PROPERTY: CNAME | ESCAPED_STRING
+DIRECTORY: /[^\/\\]+/
+VARIABLE_STRING: /(.+)(?=\}\})/ 
+WILDCARD_TEXT: /[\][()_\-?*\.\w\s]*\.\w*/ | "*" | "?"
+OPERATOR: "=" | "<>" | "!=" | "<" | ">" | ">=" | "<=" | "FUZZY MATCH" 
+        | ["REGEX"] "MATCH"

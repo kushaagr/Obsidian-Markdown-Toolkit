@@ -1,0 +1,55 @@
+%import common.ESCAPED_STRING
+// %import common.STRING
+%import common.INT
+%import common.FLOAT
+%import common.BOOL
+%import common.NL
+%import common.WS_INLINE
+%ignore WS_INLINE
+
+// ?start = frontmatter body
+//         | frontmatter [ body ]
+//         | [ frontmatter ] [ body ]
+
+?start = [ frontmatter ] [ body ]
+
+frontmatter: "---" yaml_block "---"
+
+// yaml_block: item (NL item)*
+yaml_block: (_item? _NL)* _item?
+
+    item: pair
+        | sequence
+        | scalar
+
+    pair: scalar ":" item
+    sequence: "-" item
+
+    scalar: ESCAPED_STRING
+          | STRING
+          | INT
+          | FLOAT
+          | BOOL
+          | "null"
+
+body: (LINE_OF_TEXT NL)*
+
+key_value_pair: property ":" value?
+
+property: CNAME | /([^:]+)/
+
+value: STRING
+     | BOOLEAN
+     | NUMBER
+     | DATETIME
+     | array
+
+array.2: ( ["-"] simple_value)*
+
+simple_value: STRING | BOOLEAN | NUMBER |  DATETIME
+
+LINE_OF_TEXT: /^.+$/m
+DATETIME.5: /\d{1,4}-\d{1,4}-\d{1,4}(\s*[\sTt]?\s*\d\d\:\d\d(\:\d\d)?)?/
+NUMBER.4: SIGNED_NUMBER
+BOOLEAN.3: "true"i | "false"i
+STRING.1: /.+$/m
