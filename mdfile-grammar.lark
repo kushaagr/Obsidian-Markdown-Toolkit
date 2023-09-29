@@ -5,20 +5,24 @@
 %import common.BOOL
 %import common.NEWLINE      -> NL
 %import common.WS_INLINE
+%import common.CNAME
+%import common.SIGNED_NUMBER
+
 %ignore WS_INLINE
 
 // ?start = frontmatter body
 //         | frontmatter [ body ]
 //         | [ frontmatter ] [ body ]
 
-?start = [ frontmatter ] [ body ]
+?start: frontmatter [ body ]
 
-frontmatter: "---" yaml_block "---"
+frontmatter.1: "---" " "* NL [ yaml_block ] "---" " "* NL
 
 // yaml_block: item (NL item)*
-yaml_block: (kvpair? NL)* kvpair?
+// yaml_block: (kvpair? NL)* kvpair?
+yaml_block: (kvpair NL)+
 
-kvpair: propery ":" value? NL
+kvpair: PROPERTY ":" value? 
 
 // item: pair
 //     | sequence
@@ -34,31 +38,37 @@ kvpair: propery ":" value? NL
 //       | BOOL
 //       | "null"
 
-// body: (LINE_OF_TEXT NL)*
 
 // key_value_pair: property ":" value?
 
 
-value: STRING
-     | BOOLEAN
-     | NUMBER
-     | DATETIME
-     | array
+value: array
+     | SIMPLE_VALUE
 
 // array: NL (("-" SIMPLE_VALUE) | (ARRAY_VALUE) NL)*
 array: (inline_seq | indented_seq)
-inline_seq  : "[" SIMPLE_VALUE ( "," SIMPLE_VALUE )* "]"
-indented_seq    :  ( NL "-" SIMPLE_VALUE )* NL "-" SIMPLE_VALUE 
+inline_seq: "[" SIMPLE_VALUE ( "," SIMPLE_VALUE )* "]"
+// indented_seq:  ( NL "-" SIMPLE_VALUE )* NL "-" SIMPLE_VALUE 
+indented_seq:  ( NL _ARRAY_ITEM_MARKER SIMPLE_VALUE )+
+
+// body: (LINE_OF_TEXT? NL | " "+ NL)*
+!body: (TEXT_LINE | BLANK_LINE)*
+
+TEXT_LINE.2: LINE_OF_TEXT NL
+BLANK_LINE.1: (" "+) NL
 
 // array.2: ( ["-"] simple_value)*
-// LINE_OF_TEXT: /^.+$/m
 
 SIMPLE_VALUE.2: STRING | BOOLEAN | NUMBER | DATETIME
 PROPERTY: CNAME | KEY_NAME
 // KEY_NAME: /([^:]+)/
 // ARRAY_VALUE.1: /^(?!.*:)(.*)/m
-KEY_NAME: /^\s*(?=.*\:([^:]+)/)
+// STRING.1: /\s+.+\s*$/m
+// LINE_OF_TEXT: /^(?>.*\S).+$/m
+KEY_NAME: /^\s*(?=.*\:)([^:]+)/
 DATETIME.5: /\d{1,4}-\d{1,4}-\d{1,4}(\s*[\sTt]?\s*\d\d\:\d\d(\:\d\d)?)?/
 NUMBER.4: SIGNED_NUMBER
 BOOLEAN.3: "true"i | "false"i
-STRING.1: /.+$/m
+STRING.1: WS_INLINE /(.+)$/m
+_ARRAY_ITEM_MARKER: /^\s*(?<!-)-(?!-{1,})/m
+LINE_OF_TEXT.2: /^(?=.*\S)[^\n]+/m
