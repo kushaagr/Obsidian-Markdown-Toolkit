@@ -3,7 +3,7 @@
 %import common.INT
 %import common.FLOAT
 %import common.BOOL
-%import common.NL
+%import common.NEWLINE      -> NL
 %import common.WS_INLINE
 %ignore WS_INLINE
 
@@ -16,27 +16,28 @@
 frontmatter: "---" yaml_block "---"
 
 // yaml_block: item (NL item)*
-yaml_block: (_item? _NL)* _item?
+yaml_block: (kvpair? NL)* kvpair?
 
-    item: pair
-        | sequence
-        | scalar
+kvpair: propery ":" value? NL
 
-    pair: scalar ":" item
-    sequence: "-" item
+// item: pair
+//     | sequence
+//     | scalar
 
-    scalar: ESCAPED_STRING
-          | STRING
-          | INT
-          | FLOAT
-          | BOOL
-          | "null"
+// pair: scalar ":" item
+// sequence: "-" item
 
-body: (LINE_OF_TEXT NL)*
+// scalar: ESCAPED_STRING
+//       | STRING
+//       | INT
+//       | FLOAT
+//       | BOOL
+//       | "null"
 
-key_value_pair: property ":" value?
+// body: (LINE_OF_TEXT NL)*
 
-property: CNAME | /([^:]+)/
+// key_value_pair: property ":" value?
+
 
 value: STRING
      | BOOLEAN
@@ -44,11 +45,19 @@ value: STRING
      | DATETIME
      | array
 
-array.2: ( ["-"] simple_value)*
+// array: NL (("-" SIMPLE_VALUE) | (ARRAY_VALUE) NL)*
+array: (inline_seq | indented_seq)
+inline_seq  : "[" SIMPLE_VALUE ( "," SIMPLE_VALUE )* "]"
+indented_seq    :  ( NL "-" SIMPLE_VALUE )* NL "-" SIMPLE_VALUE 
 
-simple_value: STRING | BOOLEAN | NUMBER |  DATETIME
+// array.2: ( ["-"] simple_value)*
+// LINE_OF_TEXT: /^.+$/m
 
-LINE_OF_TEXT: /^.+$/m
+SIMPLE_VALUE.2: STRING | BOOLEAN | NUMBER | DATETIME
+PROPERTY: CNAME | KEY_NAME
+// KEY_NAME: /([^:]+)/
+// ARRAY_VALUE.1: /^(?!.*:)(.*)/m
+KEY_NAME: /^\s*(?=.*\:([^:]+)/)
 DATETIME.5: /\d{1,4}-\d{1,4}-\d{1,4}(\s*[\sTt]?\s*\d\d\:\d\d(\:\d\d)?)?/
 NUMBER.4: SIGNED_NUMBER
 BOOLEAN.3: "true"i | "false"i
