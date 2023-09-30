@@ -15,8 +15,7 @@
 ?frontmatter.1: "---" " "* _NL [ yaml_block ] "---" " "* _NL
 yaml_block: (kvpair _NL)+
 kvpair: PROPERTY ":" value? 
-?value: array
-     | simple_value
+?value: array | simple_value
 ?array: (inline_seq | indented_seq)
 inline_seq: "[" simple_value ( "," simple_value )* "]"
 indented_seq:  ( _NL _ARRAY_ITEM_MARKER simple_value )+

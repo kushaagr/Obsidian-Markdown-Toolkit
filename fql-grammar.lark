@@ -5,11 +5,12 @@
 %import common.ESCAPED_STRING
 %import common.NUMBER           -> CNUM
 
+// Todo: update_stmt | delete_stmt | cache_stmt
 ?start: cd_stmt | quit_stmt | select_stmt | insert_stmt
 
 cd_stmt: "CHANGE"i (path | quoted_path) ";"?
 quit_stmt: "QUIT"i ";"?
-select_stmt: "SELECT"i properties "FROM"i quoted_resource_path [ "RECURSE"i ]  [ where_clause ] [ sort_clause ] ";"?
+select_stmt: "SELECT"i properties "FROM"i quoted_resource_path [ RECURSE_FLAG ] [ where_clause ] [ sort_clause ] ";"?
 insert_stmt: "INSERT"i key_value_object "INTO"i files [ IF_EXISTS_FLAG ] [ where_clause ] ";"?
 
 properties: ASTERISK 
@@ -28,7 +29,7 @@ path_with_environment_variable: "$" CNAME ("\\" | "/") (DIRECTORY ("\\" | "/"))*
 windows_path: LETTER "\:\\" (DIRECTORY "\\") *
 linux_path: "/" (DIRECTORY "/")*
 
-files: path WILDCARD_TEXT
+files: path WILDCARD_TEXT | "'" path WILDCARD_TEXT "'" | "\"" path WILDCARD_TEXT "\""
 
 // key_value_object: "{" [pair] ("," pair)* "}"
 key_value_object: "{" (pair ",")* [pair] "}"
@@ -47,7 +48,8 @@ array: "[" [ simple_value ("," simple_value)* ] "]"
 simple_value: NUMBER | STRING | BOOLEAN | DATETIME | NULL
 template_variable: "{{" VARIABLE_STRING "}}"
 
-ORDER: "ASC" | "DESC"
+ORDER: "ASC"i | "DESC"i
+RECURSE_FLAG: "RECURSE"i
 IF_EXISTS_FLAG: "IF EXISTS"i
 
 DATETIME.5: DATETIME_PATTERN
