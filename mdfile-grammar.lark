@@ -3,68 +3,31 @@
 %import common.INT
 %import common.FLOAT
 %import common.BOOL
-%import common.NEWLINE      -> NL
+%import common.NEWLINE      -> _NL
 %import common.WS_INLINE
 %import common.CNAME
 %import common.SIGNED_NUMBER
 
 %ignore WS_INLINE
 
-// ?start = frontmatter body
-//         | frontmatter [ body ]
-//         | [ frontmatter ] [ body ]
-
 ?start: frontmatter [ body ]
 
-frontmatter.1: "---" " "* NL [ yaml_block ] "---" " "* NL
-
-// yaml_block: item (NL item)*
-// yaml_block: (kvpair? NL)* kvpair?
-yaml_block: (kvpair NL)+
-
+?frontmatter.1: "---" " "* _NL [ yaml_block ] "---" " "* _NL
+yaml_block: (kvpair _NL)+
 kvpair: PROPERTY ":" value? 
+?value: array
+     | simple_value
+?array: (inline_seq | indented_seq)
+inline_seq: "[" simple_value ( "," simple_value )* "]"
+indented_seq:  ( _NL _ARRAY_ITEM_MARKER simple_value )+
+?simple_value.2: STRING | BOOLEAN | NUMBER | DATETIME
 
-// item: pair
-//     | sequence
-//     | scalar
-
-// pair: scalar ":" item
-// sequence: "-" item
-
-// scalar: ESCAPED_STRING
-//       | STRING
-//       | INT
-//       | FLOAT
-//       | BOOL
-//       | "null"
-
-
-// key_value_pair: property ":" value?
-
-
-value: array
-     | SIMPLE_VALUE
-
-// array: NL (("-" SIMPLE_VALUE) | (ARRAY_VALUE) NL)*
-array: (inline_seq | indented_seq)
-inline_seq: "[" SIMPLE_VALUE ( "," SIMPLE_VALUE )* "]"
-// indented_seq:  ( NL "-" SIMPLE_VALUE )* NL "-" SIMPLE_VALUE 
-indented_seq:  ( NL _ARRAY_ITEM_MARKER SIMPLE_VALUE )+
-
-// body: (LINE_OF_TEXT? NL | " "+ NL)*
 !body: (TEXT_LINE | BLANK_LINE)*
 
-TEXT_LINE.2: LINE_OF_TEXT NL
-BLANK_LINE.1: (" "+) NL
+TEXT_LINE.2: LINE_OF_TEXT _NL
+BLANK_LINE.1: (" "+) _NL
 
-// array.2: ( ["-"] simple_value)*
-
-SIMPLE_VALUE.2: STRING | BOOLEAN | NUMBER | DATETIME
 PROPERTY: CNAME | KEY_NAME
-// KEY_NAME: /([^:]+)/
-// ARRAY_VALUE.1: /^(?!.*:)(.*)/m
-// STRING.1: /\s+.+\s*$/m
-// LINE_OF_TEXT: /^(?>.*\S).+$/m
 KEY_NAME: /^\s*(?=.*\:)([^:]+)/
 DATETIME.5: /\d{1,4}-\d{1,4}-\d{1,4}(\s*[\sTt]?\s*\d\d\:\d\d(\:\d\d)?)?/
 NUMBER.4: SIGNED_NUMBER
