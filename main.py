@@ -13,11 +13,11 @@ if 'dev' in os.environ.keys():
     import debugmode as dbg
 else:
     from types import SimpleNamespace
-    dbg = SimpleNamespace(debug=print)
+    dbg = SimpleNamespace(debug = lambda *_a, **_k: print("Debugmode is off.."))
 
 
 class FroMaAstTransformer(Transformer):
-    PROPERTY = TEXT_LINE = BLANK_LINE = STRING = str
+    PROPERTY = KEY_NAME = TEXT_LINE = BLANK_LINE = STRING = str
     NUMBER = float
     BOOLEAN = bool
     DATETIME = dt.datetime.fromisoformat

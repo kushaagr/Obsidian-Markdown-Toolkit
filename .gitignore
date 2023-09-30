@@ -1,11 +1,16 @@
+
 *.archive*
 Archive/
+simple-test-grammar.lark
+json-grammar.lark
+lalr-fql-grammar.lark
 
 todo.yml
 testcases.yml
 
 *history.txt
 Notes/
+!/Notes/Find Factor Algorithm.md
 
 *.sublime-*
 

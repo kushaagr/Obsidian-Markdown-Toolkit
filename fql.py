@@ -19,7 +19,7 @@ if 'dev' in os.environ.keys():
     import debugmode as dbg
 else:
     from types import SimpleNamespace
-    dbg = SimpleNamespace(debug=print)
+    dbg = SimpleNamespace(debug = lambda *_a, **_k: print("Debugmode is off.."))
 
 
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     dbg.debug(os.getcwd())
     dbg.debug("File is in:", __file__)
 
-    fql_grammar = read_grammar('./grammar.lark')
+    fql_grammar = read_grammar('./fql-grammar.lark')
     # fql_grammar = read_grammar('./simple-test-grammar.lark')
     # fql_grammar = read_grammar('./json-grammar.lark')
     # fql_grammar = read_grammar('./lalr-fql-grammar.lark')
