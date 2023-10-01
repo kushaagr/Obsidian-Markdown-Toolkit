@@ -79,6 +79,41 @@ if __name__ == '__main__':
                     )
 
     print("Working in " + os.getcwd())
+
+
+    if dbg.debugmode:
+        test_stmts = [
+            R"SELECT * FROM './Notes/' ",
+            R"SELECT * FROM './Notes/*.md'",
+            R"SELECT * FROM './Notes/Find Factor Algorithm.md'",
+            R"""SELECT * FROM './Notes/' RECURSE WHERE Author = "kushaagr" """,
+            R"""SELECT * FROM './Notes/' RECURSE WHERE "Date (created)" = 2023-09-19""",
+            R"""SELECT * FROM './Notes/' RECURSE WHERE Author IN ["Chat GPT (September 25 version)", "Chat GPT (August 3 version)"]""",
+            R"""SELECT * FROM './Notes/' RECURSE WHERE Author = "kushaagr" SORT BY Author ASC""",
+
+            # R"CHANGE",
+            R"CHANGE .",
+            R"CHANGE c:\users\kusha\documents\dev\ ",
+            R"CHANGE 'c:\users\kusha\documents\dev\' ",
+            R"CHANGE '$dev\python\'",
+            R"CHANGE /usr/home/dev/",
+
+            R"INSERT {} INTO ./Notes/*.md ",
+            R"INSERT {} INTO './Notes/*.md' ",
+            R"""INSERT {} INTO "./Notes/*.md" """,
+            R"""INSERT {} INTO ./Notes/* IF EXISTS WHERE Author = "kushaagr" """,
+            # R"INSERT {} INTO ./Notes/",
+
+            "QUIT",
+            "QUIT;",
+
+        ]
+        for statement in test_stmts:
+            dbg.debug("Tree for:", statement)
+            tree = fql_parser.parse(statement)
+            dbg.debug(tree.pretty())    
+
+
     print("Hint: Try typing one of: SELECT | INSERT | CHANGE | QUIT")
     while True and not dbg.debugmode:
         try:
