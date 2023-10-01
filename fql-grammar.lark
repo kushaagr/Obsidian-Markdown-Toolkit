@@ -13,36 +13,38 @@ quit_stmt: "QUIT"i ";"?
 select_stmt: "SELECT"i properties "FROM"i quoted_resource_path [ RECURSE_FLAG ] [ where_clause ] [ sort_clause ] ";"?
 insert_stmt: "INSERT"i key_value_object "INTO"i files [ IF_EXISTS_FLAG ] [ where_clause ] ";"?
 
-properties: ASTERISK 
-          | PROPERTY ("," PROPERTY)+
+properties: ASTERISK | PROPERTY ("," PROPERTY)+
 sort_clause: "SORT BY"i PROPERTY [ ORDER ] ";"?
-where_clause: "WHERE"i PROPERTY OPERATOR simple_value
+where_clause: "WHERE"i PROPERTY OPERATOR simple_value 
+            | "WHERE"i PROPERTY ARRAY_OPERATOR array
 
-quoted_resource_path: quoted_path
-quoted_path: "'" path "'" | "\"" path "\""
+?quoted_resource_path: "'" resource_path "'" | "\"" resource_path "\""
 resource_path: path [ WILDCARD_TEXT ] 
-path: absolute_path | relative_path | path_with_environment_variable
-absolute_path: windows_path | linux_path
-// relative_path: ("."|"..") ["\\" | "/"] (DIRECTORY ("\\" | "/"))*
-relative_path: ("."|"..") (("\\" | "/") DIRECTORY)* ["\\" | "/"]
-path_with_environment_variable: "$" CNAME ("\\" | "/") (DIRECTORY ("\\" | "/"))*
-windows_path: LETTER "\:\\" (DIRECTORY "\\") *
-linux_path: "/" (DIRECTORY "/")*
-
+?quoted_path: "'" path "'" | "\"" path "\""
+path: _absolute_path | _relative_path | _path_with_environment_variable
 files: path WILDCARD_TEXT | "'" path WILDCARD_TEXT "'" | "\"" path WILDCARD_TEXT "\""
+
+!_path_with_environment_variable: "$" CNAME ("\\" | "/") (DIRECTORY ("\\" | "/"))*
+// _relative_path: ("."|"..") ["\\" | "/"] (DIRECTORY ("\\" | "/"))*
+!_relative_path: ("."|"..") (("\\" | "/") DIRECTORY)* ["\\" | "/"]
+_absolute_path: _windows_path | _linux_path
+!_windows_path: LETTER ":\\" (DIRECTORY "\\")*
+!_linux_path: "/" (DIRECTORY "/")*
+
 
 // key_value_object: "{" [pair] ("," pair)* "}"
 key_value_object: "{" (pair ",")* [pair] "}"
 
 pair: PROPERTY ":" value 
 
-value: STRING
-     | NUMBER
-     | array
-     | BOOLEAN
-     | DATETIME
-     | NULL
-     | template_variable
+value: array | template_variable | simple_value
+// value: STRING
+//      | NUMBER
+//      | array
+//      | BOOLEAN
+//      | DATETIME
+//      | NULL
+//      | template_variable
 
 array: "[" [ simple_value ("," simple_value)* ] "]"
 simple_value: NUMBER | STRING | BOOLEAN | DATETIME | NULL
@@ -52,8 +54,8 @@ ORDER: "ASC"i | "DESC"i
 RECURSE_FLAG: "RECURSE"i
 IF_EXISTS_FLAG: "IF EXISTS"i
 
-DATETIME.5: DATETIME_PATTERN
-DATETIME_PATTERN: /\d{1,4}-\d{1,4}-\d{1,4}(\s*[\sTt]?\s*\d\d\:\d\d(\:\d\d)?)?/
+DATETIME.5: _DATETIME_PATTERN
+_DATETIME_PATTERN: /\d{1,4}-\d{1,4}-\d{1,4}(\s*[\sTt]?\s*\d\d\:\d\d(\:\d\d)?)?/
 NUMBER.3: CNUM
 BOOLEAN.2: "true"i | "false"i
 STRING: ESCAPED_STRING
@@ -64,5 +66,7 @@ PROPERTY: CNAME | ESCAPED_STRING
 DIRECTORY: /[^\/\\]+/
 VARIABLE_STRING: /(.+)(?=\}\})/ 
 WILDCARD_TEXT: /[\][()_\-?*\.\w\s]*\.\w*/ | "*" | "?"
-OPERATOR: "=" | "<>" | "!=" | "<" | ">" | ">=" | "<=" | "FUZZY MATCH" 
-        | ["REGEX"] "MATCH"
+OPERATOR: "=" | "<>" | "!=" | "<" | ">" | ">=" | "<=" 
+        | "FUZZY MATCH"i 
+        | ["REGEX"i] "MATCH"i
+ARRAY_OPERATOR: "IN"i | "NOT IN"i
