@@ -9,6 +9,7 @@ todo.yml
 testcases.yml
 
 *history.txt
+whiteboard.*
 Notes/
 !/Notes/Find Factor Algorithm.md
 

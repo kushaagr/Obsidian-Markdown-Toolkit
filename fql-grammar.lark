@@ -14,9 +14,23 @@ select_stmt: "SELECT"i properties "FROM"i quoted_resource_path [ RECURSE_FLAG ] 
 insert_stmt: "INSERT"i key_value_object "INTO"i files [ IF_EXISTS_FLAG ] [ where_clause ] ";"?
 
 properties: ASTERISK | PROPERTY ("," PROPERTY)+
-sort_clause: "SORT BY"i PROPERTY [ ORDER ] ";"?
-where_clause: "WHERE"i PROPERTY OPERATOR simple_value 
-            | "WHERE"i PROPERTY ARRAY_OPERATOR array
+sort_clause: "SORT BY"i (PROPERTY ",")* PROPERTY [ ORDER ] ";"?
+// where_clause: "WHERE"i PROPERTY OPERATOR simple_value 
+//             | "WHERE"i PROPERTY ARRAY_OPERATOR array
+where_clause: "WHERE"i expression
+
+expression: PROPERTY "=" simple_value                  -> eq
+          | PROPERTY "<>" simple_value                 -> neq
+          | PROPERTY "!=" simple_value                 -> neq
+          | PROPERTY "<" simple_value                  -> lt
+          | PROPERTY ">" simple_value                  -> gt
+          | PROPERTY "<=" simple_value                 -> lte
+          | PROPERTY ">=" simple_value                 -> gte
+          | PROPERTY "FUZZY MATCH"i STRING             -> fuzzy_match
+          | PROPERTY ["REGEX"i] "MATCH"i STRING        -> regex_match
+          | PROPERTY ["REGEX"i] "NO MATCH"i STRING     -> regex_no_match
+          | PROPERTY "IN"i array                       -> in_list
+          | PROPERTY "NOT IN"i array                   -> notin_list
 
 ?quoted_resource_path: "'" resource_path "'" | "\"" resource_path "\""
 resource_path: path [ WILDCARD_TEXT ] 
@@ -46,6 +60,11 @@ value: array | template_variable | simple_value
 //      | NULL
 //      | template_variable
 
+// OPERATOR: "=" | "<>" | "!=" | "<" | ">" | ">=" | "<=" 
+//         | "FUZZY MATCH"i 
+//         | ["REGEX"i] "MATCH"i
+// ARRAY_OPERATOR: "IN"i | "NOT IN"i
+
 array: "[" [ simple_value ("," simple_value)* ] "]"
 simple_value: NUMBER | STRING | BOOLEAN | DATETIME | NULL
 template_variable: "{{" VARIABLE_STRING "}}"
@@ -66,7 +85,3 @@ PROPERTY: CNAME | ESCAPED_STRING
 DIRECTORY: /[^\/\\]+/
 VARIABLE_STRING: /(.+)(?=\}\})/ 
 WILDCARD_TEXT: /[\][()_\-?*\.\w\s]*\.\w*/ | "*" | "?"
-OPERATOR: "=" | "<>" | "!=" | "<" | ">" | ">=" | "<=" 
-        | "FUZZY MATCH"i 
-        | ["REGEX"i] "MATCH"i
-ARRAY_OPERATOR: "IN"i | "NOT IN"i

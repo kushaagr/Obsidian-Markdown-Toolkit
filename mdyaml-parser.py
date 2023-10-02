@@ -17,9 +17,12 @@ else:
 
 
 class FroMaAstTransformer(Transformer):
-    PROPERTY = KEY_NAME = TEXT_LINE = BLANK_LINE = STRING = str
+    TEXT_LINE = BLANK_LINE = str
+    PROPERTY = KEY_NAME = STRING = lambda _, x: x.strip()
     NUMBER = float
-    BOOLEAN = bool
+    boolean = bool
+    true = lambda _, x: True
+    false = lambda _, x: False
     DATETIME = dt.datetime.fromisoformat
     indented_seq = list
     # yaml_block = list
@@ -27,12 +30,18 @@ class FroMaAstTransformer(Transformer):
     # kvpair = lambda self, pair: print("kvpair details:", type(pair), pair)
     kvpair = lambda self, pair: dict( [tuple(pair)] ) # List of couple (touple of 2)
     inline_seq = lambda self, s: s[1:-1].split(',')
-    yaml_block = lambda _, list_of_props: { 'frontmatter': list_of_props }
+    # yaml_block = lambda _, list_of_props: { 'frontmatter': list_of_props }
+    yaml_block = lambda _, list_of_props: { 
+        'frontmatter': { 
+            k:v for obj in list_of_props for k,v in obj.items() 
+    }}
     body = lambda self, lines: { "body" : "".join(lines) }
     # body = lambda self, lines: "".join(lines)
     # frontmatter = list
     # start = lambda _, content: { k:v for k, v in [items for items in content] }
-    start = lambda _, content: { k:v for mapping in content for k,v in mapping.items() }
+    start = lambda _, content: { 
+        k:v for mapping in content for k,v in mapping.items() 
+    }
 
     # def start(self, content):
     #     l = [k for dicti in content for k,v in dicti.items()]

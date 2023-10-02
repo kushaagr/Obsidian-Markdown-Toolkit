@@ -4,11 +4,12 @@
 %import common.FLOAT
 %import common.BOOL
 %import common.NEWLINE      -> _NL
-%import common.WS_INLINE
+%import common.WS_INLINE    -> _WS_I
 %import common.CNAME
 %import common.SIGNED_NUMBER
 
-%ignore WS_INLINE
+// %ignore WS_INLINE
+%ignore _WS_I
 
 ?start: frontmatter [ body ]
 
@@ -19,7 +20,7 @@ kvpair: PROPERTY ":" value?
 ?array: (inline_seq | indented_seq)
 inline_seq: "[" simple_value ( "," simple_value )* "]"
 indented_seq:  ( _NL _ARRAY_ITEM_MARKER simple_value )+
-?simple_value.2: STRING | BOOLEAN | NUMBER | DATETIME
+?simple_value.2: STRING | boolean | NUMBER | DATETIME
 
 !body: (TEXT_LINE | BLANK_LINE)*
 
@@ -30,7 +31,8 @@ PROPERTY: CNAME | KEY_NAME
 KEY_NAME: /^\s*(?=.*\:)([^:]+)/
 DATETIME.5: /\d{1,4}-\d{1,4}-\d{1,4}(\s*[\sTt]?\s*\d\d\:\d\d(\:\d\d)?)?/
 NUMBER.4: SIGNED_NUMBER
-BOOLEAN.3: "true"i | "false"i
-STRING.1: WS_INLINE /(.+)$/m
+boolean.3: "true"i      -> true
+         | "false"i     -> false
+STRING.1: _WS_I /(.+)$/m
 _ARRAY_ITEM_MARKER: /^\s*(?<!-)-(?!-{1,})/m
 LINE_OF_TEXT.2: /^(?=.*\S)[^\n]+/m
