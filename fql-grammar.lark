@@ -10,7 +10,8 @@
 
 cd_stmt: "CHANGE"i (path | quoted_path) ";"?
 quit_stmt: "QUIT"i ";"?
-select_stmt: "SELECT"i properties "FROM"i quoted_resource_path [ RECURSE_FLAG ] [ where_clause ] [ sort_clause ] ";"?
+// select_stmt: "SELECT"i properties "FROM"i quoted_resource_path [ RECURSE_FLAG ] [ where_clause ] [ sort_clause ] ";"?
+select_stmt: "SELECT"i properties "FROM"i files [ RECURSE_FLAG ] [ where_clause ] [ sort_clause ] ";"?
 insert_stmt: "INSERT"i key_value_object "INTO"i files [ IF_EXISTS_FLAG ] [ where_clause ] ";"?
 
 properties: ASTERISK | PROPERTY ("," PROPERTY)+
@@ -35,10 +36,10 @@ expression: PROPERTY "=" simple_value                  -> eq
 ?quoted_resource_path: "'" resource_path "'" | "\"" resource_path "\""
 resource_path: path [ WILDCARD_TEXT ] 
 ?quoted_path: "'" path "'" | "\"" path "\""
-path: _absolute_path | _relative_path | _path_with_environment_variable
+path: _absolute_path | _relative_path | path_with_environment_variable
 files: path WILDCARD_TEXT | "'" path WILDCARD_TEXT "'" | "\"" path WILDCARD_TEXT "\""
 
-!_path_with_environment_variable: "$" CNAME ("\\" | "/") (DIRECTORY ("\\" | "/"))*
+!path_with_environment_variable: "$" CNAME ("\\" | "/") (DIRECTORY ("\\" | "/"))*
 // _relative_path: ("."|"..") ["\\" | "/"] (DIRECTORY ("\\" | "/"))*
 !_relative_path: ("."|"..") (("\\" | "/") DIRECTORY)* ["\\" | "/"]
 _absolute_path: _windows_path | _linux_path
