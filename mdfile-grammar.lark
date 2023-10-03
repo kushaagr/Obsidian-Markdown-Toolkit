@@ -12,23 +12,38 @@
 %ignore _WS_I
 
 ?start: frontmatter [ body ]
+      | empty_file
+      | first_line body?     -> no_metadata
+      // | ENDL* DETECT_NO_FRONTMATTER ENDL* [body]   -> no_metadata
 
-?frontmatter.1: "---" " "* _NL [ yaml_block ] "---" " "* _NL
+first_line: (ENDL? DETECT_NO_FRONTMATTER ENDL?)
+empty_file: empty_line* 
+            | ENDL
+
+?frontmatter.1: (_NL* "---" " "* _NL [ yaml_block ] "---" " "* _NL)
 yaml_block: (kvpair _NL)+
-kvpair: PROPERTY ":" value? 
+kvpair: property ":" value? 
 ?value: array | simple_value
 ?array: (inline_seq | indented_seq)
 inline_seq: "[" simple_value ( "," simple_value )* "]"
 indented_seq:  ( _NL _ARRAY_ITEM_MARKER simple_value )+
 ?simple_value.2: STRING | boolean | NUMBER | DATETIME
 
-!body: (TEXT_LINE | BLANK_LINE)*
+// !body: (text_line | blank_line | empty_line)+ 
+!body: (text_line | blank_line)+ 
+     // | empty_line+
+     // | ENDL
+     // | " "?
 
-TEXT_LINE.2: LINE_OF_TEXT _NL
-BLANK_LINE.1: (" "+) _NL
+text_line.3: LINE_OF_TEXT ENDL?
+blank_line.2: (" "+) ENDL
+empty_line: (" "+ _NL)+
+// empty_line.0: " "* ENDL+
 
-PROPERTY: CNAME | KEY_NAME
-KEY_NAME: /^\s*(?=.*\:)([^:]+)/
+// PROPERTY: CNAME | KEY_NAME
+// DETECT_NO_FRONTMATTER: /(?!.*---.+/)
+?property: KEY_NAME
+KEY_NAME.2: /^\s*(?=.*\:)[^:]+/m
 DATETIME.5: /\d{1,4}-\d{1,4}-\d{1,4}(\s*[\sTt]?\s*\d\d\:\d\d(\:\d\d)?)?/
 NUMBER.4: SIGNED_NUMBER
 boolean.3: "true"i      -> true
@@ -36,3 +51,6 @@ boolean.3: "true"i      -> true
 STRING.1: _WS_I /(.+)$/m
 _ARRAY_ITEM_MARKER: /^\s*(?<!-)-(?!-{1,})/m
 LINE_OF_TEXT.2: /^(?=.*\S)[^\n]+/m
+ENDL: (/\r?\n/)+
+DETECT_NO_FRONTMATTER: /^(?!\s*---).+/m
+ANYTHING: /.+/m
