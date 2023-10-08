@@ -14,24 +14,73 @@ quit_stmt: "QUIT"i ";"?
 select_stmt: "SELECT"i properties "FROM"i files [ RECURSE_FLAG ] [ where_clause ] [ sort_clause ] ";"?
 insert_stmt: "INSERT"i key_value_object "INTO"i files [ IF_EXISTS_FLAG ] [ where_clause ] ";"?
 
-properties: ASTERISK | PROPERTY ("," PROPERTY)+
+// properties: ASTERISK | PROPERTY ("," PROPERTY)*
+properties: ASTERISK | (PROPERTY ",")* PROPERTY
 sort_clause: "SORT BY"i (PROPERTY ",")* PROPERTY [ ORDER ] ";"?
 // where_clause: "WHERE"i PROPERTY OPERATOR simple_value 
 //             | "WHERE"i PROPERTY ARRAY_OPERATOR array
-where_clause: "WHERE"i expression
+?where_clause: "WHERE"i expression
 
-expression: PROPERTY "=" simple_value                  -> eq
-          | PROPERTY "<>" simple_value                 -> neq
-          | PROPERTY "!=" simple_value                 -> neq
-          | PROPERTY "<" simple_value                  -> lt
-          | PROPERTY ">" simple_value                  -> gt
-          | PROPERTY "<=" simple_value                 -> lte
-          | PROPERTY ">=" simple_value                 -> gte
-          | PROPERTY "FUZZY MATCH"i STRING             -> fuzzy_match
-          | PROPERTY ["REGEX"i] "MATCH"i STRING        -> regex_match
-          | PROPERTY ["REGEX"i] "NO MATCH"i STRING     -> regex_no_match
-          | PROPERTY "IN"i array                       -> in_list
-          | PROPERTY "NOT IN"i array                   -> notin_list
+// expression: PROPERTY "=" simple_value                  -> eq
+//           | PROPERTY "<>" simple_value                 -> neq
+//           | PROPERTY "!=" simple_value                 -> neq
+//           | PROPERTY "<" simple_value                  -> lt
+//           | PROPERTY ">" simple_value                  -> gt
+//           | PROPERTY "<=" simple_value                 -> lte
+//           | PROPERTY ">=" simple_value                 -> gte
+//           | PROPERTY "FUZZY MATCH"i STRING             -> fuzzy_match
+//           | PROPERTY ["REGEX"i] "MATCH"i STRING        -> regex_match
+//           | PROPERTY ["REGEX"i] "NO MATCH"i STRING     -> regex_no_match
+//           | PROPERTY "IN"i array                       -> in_list
+//           | PROPERTY "NOT IN"i array                   -> notin_list
+
+// expression: PROPERTY OPERATOR (simple_value|array)
+// expression: PROPERTY operator simple_value
+//           | PROPERTY STRING_OPERATOR STRING
+//           | PROPERTY ARRAY_OPERATOR array
+
+// expression: PROPERTY eq simple_value
+//           | PROPERTY ne simple_value
+//           | PROPERTY ne simple_value
+//           | PROPERTY lt simple_value 
+//           | PROPERTY gt simple_value 
+//           | PROPERTY le simple_value
+//           | PROPERTY gt simple_value
+//           | PROPERTY fuzzy_match STRING
+//           | PROPERTY regex_match STRING
+//           | PROPERTY regex_no_match STRING
+//           | PROPERTY in array      
+//           | PROPERTY not_in array
+
+expression: eq | ne | lt | gt | ge | le
+          | fuzzy_match | regex_match | regex_no_match
+          | in | not_in
+
+eq: PROPERTY "=" simple_value
+ne: PROPERTY ("<>" | "!=") simple_value
+lt: PROPERTY "<" simple_value
+gt: PROPERTY ">" simple_value
+le: PROPERTY "<=" simple_value
+ge: PROPERTY ">=" simple_value
+fuzzy_match: PROPERTY "FUZZY MATCH"i STRING
+regex_match: PROPERTY ["REGEX"i] "MATCH"i STRING
+regex_no_match: PROPERTY ["REGEX"i] "NO MATCH"i STRING
+in: PROPERTY "IN"i array
+not_in: PROPERTY "NOT IN"i array
+
+// operator: "="                      -> eq
+//         | "<>"                     -> ne
+//         | "!="                     -> ne
+//         | "<"                      -> lt
+//         | ">"                      -> gt
+//         | "<="                     -> le
+//         | ">="                     -> ge
+// STRING_OPERATOR: "FUZZY MATCH"i           // -> fuzzy_match
+//                | ["REGEX"i] "MATCH"i      // -> regex_match
+//                | ["REGEX"i] "NO MATCH"i   // -> regex_no_match
+// ARRAY_OPERATOR: "IN"i                    // -> in
+//               | "NOT IN"i                // -> not_in
+     
 
 ?quoted_resource_path: "'" resource_path "'" | "\"" resource_path "\""
 resource_path: path [ WILDCARD_TEXT ] 
