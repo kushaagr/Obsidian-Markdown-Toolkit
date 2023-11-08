@@ -12,7 +12,7 @@ cd_stmt: "CHANGE"i (path | quoted_path) ";"?
 quit_stmt: "QUIT"i ";"?
 // select_stmt: "SELECT"i properties "FROM"i quoted_resource_path [ RECURSE_FLAG ] [ where_clause ] [ sort_clause ] ";"?
 select_stmt: "SELECT"i properties "FROM"i files [ RECURSE_FLAG ] [ where_clause ] [ sort_clause ] ";"?
-insert_stmt: "INSERT"i key_value_object "INTO"i files [ IF_EXISTS_FLAG ] [ where_clause ] ";"?
+insert_stmt: "INSERT"i key_value_list "INTO"i files [ IF_EXISTS_FLAG ] [ where_clause ] ";"?
 
 // properties: ASTERISK | PROPERTY ("," PROPERTY)*
 properties: ASTERISK | (PROPERTY ",")* PROPERTY
@@ -96,12 +96,12 @@ _absolute_path: _windows_path | _linux_path
 !_linux_path: "/" (DIRECTORY "/")*
 
 
-// key_value_object: "{" [pair] ("," pair)* "}"
-key_value_object: "{" (pair ",")* [pair] "}"
+// key_value_list: "{" [pair] ("," pair)* "}"
+key_value_list: "{" (pair ",")* [pair] "}"
 
 pair: PROPERTY ":" value 
 
-value: array | template_variable | simple_value
+?value: array | template_variable | simple_value
 // value: STRING
 //      | NUMBER
 //      | array

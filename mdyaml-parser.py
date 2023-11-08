@@ -112,7 +112,12 @@ if __name__ == '__main__':
     # dbg.debug(fmblock, debug_group="final-result")
     # dbg.debug(fmblock.pretty(), debug_group="final-result")
 
-    pprint(fmblock)
-    # print(fmblock['frontmatter'])
+    # pprint(fmblock)
+    print(fmblock['frontmatter'])
+    # print(fmblock['body'])
     # print(fmblock['frontmatter'].keys())
     # print(fmblock['frontmatter']["['Author']"])
+
+    # for key, value in fmblock['frontmatter'].items():
+    #     print(f"{key}: {value}")
+    # print(''.join(fmblock['body']))
