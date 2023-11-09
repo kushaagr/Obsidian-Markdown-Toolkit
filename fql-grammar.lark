@@ -21,6 +21,8 @@ sort_clause: "SORT BY"i (PROPERTY ",")* PROPERTY [ ORDER ] ";"?
 //             | "WHERE"i PROPERTY ARRAY_OPERATOR array
 ?where_clause: "WHERE"i expression
 
+!dot: "." | ".."  
+
 // expression: PROPERTY "=" simple_value                  -> eq
 //           | PROPERTY "<>" simple_value                 -> neq
 //           | PROPERTY "!=" simple_value                 -> neq

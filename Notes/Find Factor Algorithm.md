@@ -1,9 +1,15 @@
 ---
 Author: Chat GPT (August 3 version)
 tags:
-  - CPP
-  - DSA/Algorithms
-  - Python
+	- CPP
+	- DSA/Algorithms
+	- Python
+testing-flag: true
+uplink: [[F-map]]
+test: Value I
+count: 1.0
+test_1: Value II
+date: 2023-11-09
 ---
 
 ## C++
@@ -39,7 +45,7 @@ def find_factor(n, k):
     for f in range(2, math.isqrt(n) + 1):
         if n % f == 0:
             ans.extend([f, n // f] if f != n // f else [f])
-    
+
     return ans[k - 1] if k <= len(ans) else 1
 
 # Example usage:

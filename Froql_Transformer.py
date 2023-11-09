@@ -3,7 +3,6 @@ import os
 import glob
 import operator
 import re
-
 from pathlib import Path
 from datetime import datetime
 from pprint import pprint
@@ -11,15 +10,6 @@ from pprint import pprint
 import lark
 from lark import Lark, Transformer, v_args
 
-from prompt_toolkit import prompt
-from prompt_toolkit.history import FileHistory
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from prompt_toolkit.completion import WordCompleter
-from prompt_toolkit.lexers import PygmentsLexer
-
-from pygments.lexers.sql import SqlLexer
-
-# os.chdir(os.environ['dev'] + '\\Python\\frontmatter-query-language')
 os.chdir(Path(__file__).parent)
 if 'dev' in os.environ.keys():
     sys.path.append(os.environ['dev'] + '\\Python\\')
@@ -29,21 +19,6 @@ else:
     dbg = SimpleNamespace(debug = lambda *_a, **_k: print("Debugmode is off.."))
 
 
-
-
-FQLCompleter = WordCompleter([
-    'SELECT', 'INSERT', 'CHANGE', 'QUIT',
-    'FROM', 'INTO', 'IF EXISTS', 'SORT BY', 'WHERE',
-    'ASC', 'DESC', 'MATCH', 'FUZZY MATCH', 'REGEX MATCH', 'MATCH'
-])
-
-statement_syntax = [
-    R"SELECT <properties> FROM <folder-path> [ RECURSE ] [ WHERE <expression> ] [ SORT BY <property> ]""",
-    R"INSERT <scalar-json-object> INTO <files-path> [ IF EXISTS ]",
-    R"CHANGE <path>",
-]
-
-
 def read_text(path: Path) -> str:
     with open(path, encoding = 'cp850') as f:
         text = f.read()
@@ -51,134 +26,70 @@ def read_text(path: Path) -> str:
     return text
 
 
-if __name__ == '__main__':
-    dbg.debugmode = True
-    # dbg.debugmode = False
+def append_strings_to_file(file_path, string_list):
+    try:
+        with open(file_path, 'a') as file:
+            for string in string_list:
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                formatted_string = f"\n{timestamp}\n+{string}\n"
+                file.write(formatted_string)
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
 
-    dbg.debug(os.getcwd())
-    dbg.debug("File is in:", __file__)
+def empty(text: str):
+    return not bool(text.strip())
 
-    HISTORY_FILE = 'FroqlHistory.txt'
+# Define custom operator functions
+def matches_fx(pattern, value):
+    return bool(re.search(pattern, value))
 
-    fql_grammar = read_text('./fql-grammar.lark')
-    # fql_grammar = read_text('./simple-test-grammar.lark')
-    # fql_grammar = read_text('./json-grammar.lark')
-    # fql_grammar = read_text('./lalr-fql-grammar.lark')
-    # dbg.debug(fql_grammar)
+def notmatches_fx(pattern, value):
+    return not bool(re.search(pattern, value))
 
-    fql_parser = Lark(fql_grammar,
-                        # maybe_placeholders=False,
-                        maybe_placeholders=True,
-                        # parser='lalr',
-                        parser='earley',
-                        ambiguity='explicit',
-                        
-                    )
+def fuzzymatch_fx(pattern, value):
+    # TODO ...
+    return matches_fx(pattern, value)
 
-    print("Working in " + os.getcwd())
+# Define 'in' operator
+def in_fx(key, value):
+    # TODO ...
+    # return value in x[key]
+    pass
 
+# Define 'notin' operator
+def notin_fx(key, value):
+    # TODO ...
+    # return value not in x[key]
+    pass
 
-    if dbg.debugmode:
-        test_stmts = [
-            # R"SELECT * FROM './Notes/*' ",
-            # R"SELECT Author, created FROM './Notes/*' ",
-            # R"SELECT * FROM './Notes/*.md'",
-            R"SELECT * FROM './Notes/Find Factor Algorithm.md'",
-            # R"""SELECT * FROM './Notes/*.md' WHERE "Up link" = null """,
-            # R"""SELECT * FROM './Notes/*' RECURSE WHERE Author = "kushaagr" """,
-            # R"""SELECT * FROM './Notes/*' RECURSE WHERE "Date (created)" = 2023-09-19""",
-            # R"""SELECT * FROM './Notes/F*.md' RECURSE WHERE Author IN ["Chat GPT (September 25 version)", "Chat GPT (August 3 version)"]""",
-            # R"""SELECT * FROM './Notes/*' RECURSE WHERE Author NOT IN ["Chat GPT (September 25 version)", "Chat GPT (August 3 version)"]""",
-            # R"""SELECT * FROM './Notes/*.md' RECURSE WHERE Author = "kushaagr" SORT BY Author ASC""",
-            # R"""SELECT * FROM './Notes/*.md' RECURSE WHERE Author = "kushaagr" SORT BY Author ASC""",
-            # R"""SELECT tags, "Author" FROM './Notes/*.md' RECURSE WHERE Author = "kushaagr" SORT BY Author ASC""",
-            # R"SELECT * FROM './Notes/*.md' sort by Author, created",
+def filter_content(key, value, _input, op):
+    if key not in _input:
+        return False
+    if not isinstance(_input[key], list):
+        return operators[op](value, _input[key])
+    else:
+        binary_fx = lambda x: operators[op](x, value)
+        return len(list( filter(binary_fx, _input[key]) )) > 0        
 
-            # # R"CHANGE",
-            # R"CHANGE .",
-            # R"CHANGE c:\users\kusha\documents\dev\ ",
-            # R"CHANGE 'c:\users\kusha\documents\dev\' ",
-            # R"CHANGE '$dev\python\'",
-            # R"CHANGE /usr/home/dev/",
+# Create a mapping of operator names to operator functions
+operators = {
+    'eq': operator.eq,
+    'ne': operator.ne,
+    'lt': operator.lt,
+    'gt': operator.gt,
+    'le': operator.le,
+    'ge': operator.ge,
+    'regex_match': matches_fx,
+    'regex_no_match': notmatches_fx,
+    'in': in_fx,
+    'not_in': notin_fx,
+    'fuzzy_match': fuzzymatch_fx
+    # Add more custom operators as needed
+}
 
-            # R"INSERT {} INTO ./Notes/*.md ",
-            R"""INSERT {test: "Value I"} INTO './Notes/Find Factor Algorithm.md' """, 
-            R"""INSERT {test: "Value I", count: 1} INTO './Notes/Find Factor Algorithm.md' IF EXISTS """, 
-            R"""INSERT {test_1: "Value II", date: {{date.now}} } INTO './Notes/Find Factor Algorithm.md' """, 
-            # R"INSERT {} INTO './Notes/*.md' ",
-            # R"""INSERT {} INTO "./Notes/*.md" """,
-            # R"""INSERT {} INTO ./Notes/* IF EXISTS WHERE Author = "kushaagr" """,
-            # # R"INSERT {} INTO ./Notes/",
- 
-            # "QUIT",
-            # "QUIT;",
-
-        ]
-        for statement in test_stmts:
-            dbg.debugset = "first"
-            dbg.debug()
-            
-            dbg.debugset='stmt'
-            dbg.debug("Tree for:", statement, debug_group='stmt')
-
-            dbg.debugset = 'tree-testing'
-            tree = fql_parser.parse(statement)
-            dbg.debug("Pretty parsed tree..", debug_group='tree-testing') 
-            if (isinstance(tree, lark.tree.Tree)):
-                dbg.debug(tree.pretty(), debug_group='tree-testing')
-                pass
-            else:
-                dbg.debug(f"{isinstance(tree, lark.tree.Tree)=}", debug_group='tree-testing')
-
-            from Froql_Transformer import FqlAstTransformer
-
-            actiondata = FqlAstTransformer().transform(tree)
-            dbg.debug("After transform..", debug_group='tree-testing')
-            if (isinstance(actiondata, lark.tree.Tree)):
-                dbg.debug(actiondata.pretty(), debug_group='tree-testing')
-            else:
-                dbg.debug(f"{isinstance(actiondata, lark.tree.Tree)=}", debug_group='tree-testing')
-                
-
-            dbg.debugset = "raw"
-            dbg.debug("RAW DATA", debug_group="raw")
-            dbg.debug("After transorm (raw)..")
-            dbg.debug(actiondata, debug_group="raw")
-            
-            # dbg.debugset = "types"
-            # dbg.debug("TYPES", debug_group="types")
-            dbg.debug(f"{type(tree)=}", debug_group="types")
-            dbg.debug(f"{type(actiondata)=}", debug_group="types")
-
-            # dbg.debugset = "isinstance"
-            dbg.debug("isinstance", debug_group="isinstance")
-            dbg.debug(f"{isinstance(tree, lark.tree.Tree)=}", debug_group="isinstance")
-
-
-    print("Hint: Try typing one of: SELECT | INSERT | CHANGE | QUIT")
-    while True and not dbg.debugmode:
-        try:
-            statement = prompt(u'froql> ',
-                        history=FileHistory(HISTORY_FILE),
-                        auto_suggest=AutoSuggestFromHistory(),
-                        completer=FQLCompleter,
-                        lexer=PygmentsLexer(SqlLexer)
-                        )
-            tree = fql_parser.parse(statement)
-            print(tree.pretty())
-        except Exception as e:
-            print(type(e), e)
-        except KeyboardInterrupt:
-            # print("<aapka-din-shubh-rahe -- in-hindi>")
-            # print("Have a great day.")
-            # print("Thank you for trying out.")
-            append_strings_to_file(HISTORY_FILE, statement_syntax)
-            print("Graceful exit..")
-            raise SystemExit
-
-
-class __FqlAstTransformer(Transformer):
-    """
+dbg.debugmode = False
+class FqlAstTransformer(Transformer):
+    
     def resource_path(self, tokens):
         resource = tokens[0]['path']
         if len(tokens) > 1:
@@ -331,22 +242,7 @@ class __FqlAstTransformer(Transformer):
         #   or
         #   filter parsed_item[frontmatter].keys() such that item in props 
 
-        def __collape_region():
-            pass
-            # def f(t):
-            #     di = t[1]
-            #     k = di.keys()
-            #     return t if k in props else None
 
-            # def f(pair):
-            #     def g(x):
-            #         k, i = x
-            #         return x if k in props else None
-            #     di = pair[1]
-            #     return list(filter(g, di.items()))
-        
-        # selected = list( filter(f, blocks) ) if props[0].strip() != '*' else blocks
-        # print(f"{selected=}")
 
         def f(t):
             return props[0] == '*' or any(prop in props for prop in t[1])
@@ -463,15 +359,17 @@ class __FqlAstTransformer(Transformer):
                     f.write("\n")
                     f.writelines(bd)
                     # f.write(bd)
-                    print(f"{fm=}")
-                    print(f"{type(bd)=}")
-                    print(f"{bd=}")
+                    dbg.debug(f"{fm=}")
+                    dbg.debug(f"{type(bd)=}")
+                    dbg.debug(f"{bd=}")
 
     # insert_stmt = lambda _, x: x
 
     def cd_stmt(self, tokens):
         try:
             path = tokens[0]['path']
+            dbg.debugset = 'path'
+            dbg.debug('path=', path, debug_group='path')
             os.chdir(path)
             print(f"Current working directory: {path}")
         except FileNotFoundError as ffe:
@@ -501,11 +399,12 @@ class __FqlAstTransformer(Transformer):
     # expression = lambda _, x: {"expression":[ str(x[0].data), x[0].children ]}
     expression = lambda _, x: {str(x[0].data) : x[0].children}
 
+    dot = str
     properties = lambda _, x: {"properties": x}
     array = list
     # simple_value = lambda _, x: {"simv": x[0]}
     simple_value = lambda _, x: x[0]
-    path = lambda self, value: { "path": "".join(value) }
+    path = lambda self, value: { "path": "".join(value if value else []) }
     path_with_environment_variable = lambda self, x: (
         os.environ.get(x[1]) + ( "".join(x[2:]) if len(x) > 2 else "")
     )
@@ -515,51 +414,3 @@ class __FqlAstTransformer(Transformer):
     }.get(x[0], '')
     pair = lambda _, x: tuple(x)
     
-    def __collape_region():
-        pass
-        # RECURSE_FLAG = lambda _, x: {"recurse": bool(x)}
-        # IF_EXISTS_FLAG = lambda _, x: {"if_exists": bool(x)}
-        
-        # WILDCARD_TEXT = DOT = SLASH = DIRECTORY = str
-
-
-        # def path(self, value):
-        #     return "".join(value)
-
-        # resource_path = lambda self, value: { "resource": "".join(value[0]['path'] )}
-        # resource_path = lambda self, value: { 
-        #     # "resource": value[0]['path'] if len(value) == 1 else ( "".join(value[0]['path']) + value[1:][0] ) 
-        #     "resource": value[0]['path'] if len(value) == 1 else "".join([value[0]['path']] + value[1:]) 
-        # }
-        # resource_path: 
-        # where_clause
-        # select_stmt = lambda _, tokens: { k:v for obj in tokens for k,v in obj.items() }
-        # select_stmt = lambda _, tokens: tokens
-
-
-    def __collape_region():
-        pass
-        # DIRECTORY = lambda _, x: print("Details of DIRECTORY", f"{type(x)=}", str(x)) 
-        # DIRECTORY = lambda _, x: str(x)
-        # relative_path: v_args(inline=True)(lambda _, x: print("Details of relative_path", f"{type(x)=}", x))
-        # relative_path: lambda self, x: "".join(x)
-        # relative_path: lambda _, x: print("Details of relative_path", f"{type(x)=}", x)
-        
-        # resource_path: lambda _, x: print("Details of resource_path", f"{type(x)=}", x)
-        # absolute_path: lambda _, x: print("Details of absolute_path", f"{type(x)=}", x)
-        # windows_path: lambda _, x: print("Details of windows_path", f"{type(x)=}", x)
-        # linux_path: lambda _, x: print("Details of linux_path", f"{type(x)=}", x)
-        # quoted_resource_path: lambda _, x: print("Details of quoted_resource_path", f"{type(x)=}", x)
-        # quoted_path: lambda _, x: print("Details of quoted_path", f"{type(x)=}", x)
-        # path: lambda _, x: print("Details of path", f"{type(x)=}", x)
-        # path_with_environment_variable: lambda _, x: print("Details of path_with_environment_variable", f"{type(x)=}", x)
-        # files: lambda _, x: print("Details of file", f"{type(x)=}", x)
-        # select_stmt: lambda _,x : print("SELECT STATEMENT")
-
-        # def relative_path(self, tokens):
-        #     # dbg.debugset = "misc"
-        #     dbg.debug("Details of relative_path", f"{type(tokens)=}", tokens)
-        #     print("Details of relative_path", f"{type(tokens)=}", tokens)
-        #     return tokens
-    """
-    pass
