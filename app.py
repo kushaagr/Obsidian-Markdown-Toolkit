@@ -59,11 +59,11 @@ def append_strings_to_file(file_path, string_list):
 
 
 if __name__ == '__main__':
-    dbg.debugmode = False
     dbg.debugmode = True
+    dbg.debugmode = False
     HISTORY_FILE = 'FroqlHistory.txt'
 
-    fql_grammar = read_grammar('./fql-grammar.lark')
+    fql_grammar = read_grammar(Path(__file__).parent / 'fql-grammar.lark')
     fql_parser = Lark(fql_grammar,
                         maybe_placeholders=True,
                         # parser='lalr',
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                         auto_suggest=AutoSuggestFromHistory(),
                         completer=FQLCompleter,
                         lexer=PygmentsLexer(SqlLexer),
-                        style=style_from_pygments_cls(get_style_by_name('monokai'))
+                        style=style_from_pygments_cls(get_style_by_name('dracula'))
                         )
             tree = fql_parser.parse(statement)
             

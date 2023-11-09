@@ -147,7 +147,7 @@ class FqlAstTransformer(Transformer):
         # parse the file(s)
         from Mdyaml_Transformer import FmAstTransformer
 
-        mdgrammar = read_text('./mdfile-grammar.lark')
+        mdgrammar = read_text(Path(__file__).parent / 'mdfile-grammar.lark')
         mdparser = Lark(mdgrammar,
                         maybe_placeholders=False,
                         # parser='lalr',
@@ -298,7 +298,7 @@ class FqlAstTransformer(Transformer):
         # parse the file(s)
         from Mdyaml_Transformer import FmAstTransformer
 
-        mdgrammar = read_text('./mdfile-grammar.lark')
+        mdgrammar = read_text(Path(__file__).parent / 'mdfile-grammar.lark')
         mdparser = Lark(mdgrammar,
                         maybe_placeholders=False,
                         # parser='lalr',
@@ -371,7 +371,7 @@ class FqlAstTransformer(Transformer):
             dbg.debugset = 'path'
             dbg.debug('path=', path, debug_group='path')
             os.chdir(path)
-            print(f"Current working directory: {path}")
+            print(f"Current working directory: {os.getcwd()}")
         except FileNotFoundError as ffe:
             print(f"The system cannot find the path specified: {path}", file=sys.stderr)
 
@@ -404,7 +404,7 @@ class FqlAstTransformer(Transformer):
     array = list
     # simple_value = lambda _, x: {"simv": x[0]}
     simple_value = lambda _, x: x[0]
-    path = lambda self, value: { "path": "".join(value if value else []) }
+    path = lambda self, value: { "path": "".join(map(lambda x: '' if not x else x, value)) }
     path_with_environment_variable = lambda self, x: (
         os.environ.get(x[1]) + ( "".join(x[2:]) if len(x) > 2 else "")
     )
