@@ -83,6 +83,8 @@ if __name__ == '__main__':
                         lexer=PygmentsLexer(SqlLexer),
                         style=style_from_pygments_cls(get_style_by_name('dracula'))
                         )
+            if not statement.strip():
+                continue
             tree = fql_parser.parse(statement)
             
             dbg.debugset = 'pretty-tree'

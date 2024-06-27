@@ -1,5 +1,6 @@
 
 *.archive*
+*.prep.*
 Archive/
 simple-test-grammar.lark
 json-grammar.lark
