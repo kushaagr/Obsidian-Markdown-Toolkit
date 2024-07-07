@@ -13,12 +13,13 @@ Bulk edit "front-matter" of markdown files easily. Since front-matter conatains 
 `Python`, `Lark Parser`
 
 ## Demo
-...
+https://github.com/kushaagr/PKM-Toolkit/assets/68564934/84062977-306b-4443-bcd7-48618ae401b7
 
 ## Usage
 
 ### Select statement
 Syntax
+
 ```sql
 SELECT <properties> FROM <folder-path> [ RECURSE ] [ WHERE <expression> ] [ SORT BY <property> ] [;]
 ```
